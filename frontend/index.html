@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cron 表达式解析工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5a6fd8;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .example {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .result-section {
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .result-content {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .error {
+            border-left-color: #e74c3c;
+            background: #fdf2f2;
+        }
+
+        .error .result-title {
+            color: #e74c3c;
+        }
+
+        .next-times {
+            list-style: none;
+        }
+
+        .next-times li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .next-times li:last-child {
+            border-bottom: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕐 Cron 表达式解析工具</h1>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="cronInput" 
+                    placeholder="请输入 Cron 表达式，例如: 0 0 4 * * ?"
+                    value="0 0 4 * * ?"
+                />
+                <button onclick="parseCron()" id="parseBtn">解析</button>
+            </div>
+            
+            <div class="example">
+                <strong>常用示例：</strong><br>
+                • <code>0 0 4 * * ?</code> - 每天凌晨4点<br>
+                • <code>0 30 9 * * MON-FRI</code> - 工作日上午9:30<br>
+                • <code>0 0 */6 * * ?</code> - 每6小时
+            </div>
+        </div>
+
+        <div class="result-section" id="results" style="display: none;">
+            <div class="result-card" id="parseResult">
+                <div class="result-title">📋 表达式解释</div>
+                <div class="result-content" id="humanReadable"></div>
+            </div>
+
+            <div class="result-card" id="timesResult">
+                <div class="result-title">⏰ 未来5次执行时间</div>
+                <div class="result-content">
+                    <ul class="next-times" id="nextTimes"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        async function parseCron() {
+            const cronExpr = document.getElementById('cronInput').value.trim();
+            const parseBtn = document.getElementById('parseBtn');
+            const results = document.getElementById('results');
+            
+            if (!cronExpr) {
+                alert('请输入 Cron 表达式');
+                return;
+            }
+
+            parseBtn.disabled = true;
+            parseBtn.textContent = '解析中...';
+
+            try {
+                // 解析表达式
+                const parseResponse = await fetch(`${API_BASE}/parse?expr=${encodeURIComponent(cronExpr)}`);
+                const parseData = await parseResponse.json();
+
+                if (parseData.valid) {
+                    document.getElementById('humanReadable').textContent = parseData.humanReadable;
+                    document.getElementById('parseResult').classList.remove('error');
+
+                    // 获取未来执行时间
+                    const timesResponse = await fetch(`${API_BASE}/next-times?expr=${encodeURIComponent(cronExpr)}&count=5`);
+                    const timesData = await timesResponse.json();
+
+                    if (timesData.valid && timesData.nextTimes) {
+                        const nextTimesList = document.getElementById('nextTimes');
+                        nextTimesList.innerHTML = '';
+                        
+                        timesData.nextTimes.forEach((time, index) => {
+                            const li = document.createElement('li');
+                            li.textContent = `${index + 1}. ${time}`;
+                            nextTimesList.appendChild(li);
+                        });
+                        
+                        document.getElementById('timesResult').classList.remove('error');
+                    } else {
+                        showError('timesResult', timesData.message || '无法计算执行时间');
+                    }
+                } else {
+                    showError('parseResult', parseData.message || '无效的 Cron 表达式');
+                    document.getElementById('timesResult').style.display = 'none';
+                }
+
+                results.style.display = 'block';
+
+            } catch (error) {
+                showError('parseResult', '网络错误，请检查后端服务是否运行');
+                console.error('Error:', error);
+                results.style.display = 'block';
+            } finally {
+                parseBtn.disabled = false;
+                parseBtn.textContent = '解析';
+            }
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.classList.add('error');
+            if (elementId === 'parseResult') {
+                document.getElementById('humanReadable').textContent = message;
+            } else {
+                document.getElementById('nextTimes').innerHTML = `<li style="color: #e74c3c;">${message}</li>`;
+            }
+        }
+
+        // 支持回车键解析
+        document.getElementById('cronInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                parseCron();
+            }
+        });
+
+        // 页面加载时自动解析默认值
+        window.addEventListener('load', function() {
+            parseCron();
+        });
+    </script>
+</body>
+</html>
