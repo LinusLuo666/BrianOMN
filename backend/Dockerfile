@@ -1,23 +1,30 @@
-FROM openjdk:17-jdk-slim
+# Multi-stage build for smaller final image
+FROM maven:3.8.6-openjdk-17-slim AS builder
 
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml for dependency resolution
-COPY pom.xml ./
-COPY .mvn .mvn
-COPY mvnw ./
+# Copy pom.xml first for dependency caching
+COPY pom.xml .
 
 # Download dependencies
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+RUN mvn dependency:go-offline -B
 
 # Copy source code
 COPY src src
 
 # Build the application
-RUN ./mvnw clean package -DskipTests -B
+RUN mvn clean package -DskipTests -B
+
+# Runtime stage
+FROM openjdk:17-jre-slim
+
+WORKDIR /app
+
+# Copy the built jar from builder stage
+COPY --from=builder /app/target/cron-parser-api-1.0.0.jar app.jar
 
 # Expose port
 EXPOSE 8080
 
 # Run the application
-CMD ["java", "-jar", "target/cron-parser-api-1.0.0.jar"]
+CMD ["java", "-jar", "app.jar"]

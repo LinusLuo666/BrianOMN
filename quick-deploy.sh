@@ -402,35 +402,39 @@ echo "🐳 创建 Docker 配置文件..."
 
 # 创建后端 Dockerfile
 cat > backend/Dockerfile << 'EOF'
-FROM openjdk:17-jdk-slim
+# Multi-stage build for smaller final image
+FROM maven:3.8.6-openjdk-17-slim AS builder
 
 WORKDIR /app
 
-COPY pom.xml ./
-COPY .mvn .mvn
-COPY mvnw ./
+# Copy pom.xml first for dependency caching
+COPY pom.xml .
 
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+# Download dependencies
+RUN mvn dependency:go-offline -B
 
+# Copy source code
 COPY src src
 
-RUN ./mvnw clean package -DskipTests -B
+# Build the application
+RUN mvn clean package -DskipTests -B
 
+# Runtime stage
+FROM openjdk:17-jre-slim
+
+WORKDIR /app
+
+# Copy the built jar from builder stage
+COPY --from=builder /app/target/cron-parser-api-1.0.0.jar app.jar
+
+# Expose port
 EXPOSE 8080
 
-CMD ["java", "-jar", "target/cron-parser-api-1.0.0.jar"]
+# Run the application
+CMD ["java", "-jar", "app.jar"]
 EOF
 
-# 创建 Maven wrapper 属性文件
-cat > backend/.mvn/wrapper/maven-wrapper.properties << 'EOF'
-distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.8.6/apache-maven-3.8.6-bin.zip
-wrapperUrl=https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.1.0/maven-wrapper-3.1.0.jar
-EOF
-
-# 下载 Maven wrapper 脚本
-echo "📥 下载 Maven wrapper..."
-curl -s https://raw.githubusercontent.com/takari/maven-wrapper/master/mvnw > backend/mvnw
-chmod +x backend/mvnw
+# 注意：使用 Maven 官方镜像，不需要 Maven wrapper
 
 echo "🌐 创建前端文件..."
 
