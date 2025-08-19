@@ -498,8 +498,8 @@ cat > frontend/index.html << 'EOF'
             <div class="example">
                 <strong>常用示例：</strong><br>
                 • <code>0 0 4 * * ?</code> - 每天凌晨4点<br>
-                • <code>0 30 9 * * MON-FRI</code> - 工作日上午9:30<br>
-                • <code>0 0 */6 * * ?</code> - 每6小时
+                • <code>0 30 9 ? * MON-FRI</code> - 工作日上午9:30<br>
+                • <code>0 0 0/6 * * ?</code> - 每6小时
             </div>
         </div>
 

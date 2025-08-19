@@ -83,16 +83,37 @@ public class CronService {
 
         StringBuilder description = new StringBuilder();
 
-        // 简单的中文描述生成逻辑
-        if ("0".equals(seconds) && "*".equals(minutes) && "*".equals(hours) && "*".equals(dayOfMonth) && "*".equals(month) && "?".equals(dayOfWeek)) {
-            description.append("每分钟执行");
-        } else if ("0".equals(seconds) && "0".equals(minutes) && "*".equals(hours) && "*".equals(dayOfMonth) && "*".equals(month) && "?".equals(dayOfWeek)) {
-            description.append("每小时整点执行");
-        } else if ("0".equals(seconds) && "0".equals(minutes) && !"*".equals(hours) && "*".equals(dayOfMonth) && "*".equals(month) && "?".equals(dayOfWeek)) {
-            description.append("每天 ").append(String.format("%02d", Integer.parseInt(hours))).append(":00 执行");
-        } else if ("0".equals(seconds) && !"*".equals(minutes) && !"*".equals(hours) && "*".equals(dayOfMonth) && "*".equals(month) && "?".equals(dayOfWeek)) {
-            description.append("每天 ").append(String.format("%02d:%02d", Integer.parseInt(hours), Integer.parseInt(minutes))).append(" 执行");
-        } else {
+        try {
+            // 每分钟执行
+            if ("0".equals(seconds) && "*".equals(minutes) && "*".equals(hours) && "*".equals(dayOfMonth) && "*".equals(month) && "?".equals(dayOfWeek)) {
+                description.append("每分钟执行");
+            }
+            // 每小时整点执行
+            else if ("0".equals(seconds) && "0".equals(minutes) && "*".equals(hours) && "*".equals(dayOfMonth) && "*".equals(month) && "?".equals(dayOfWeek)) {
+                description.append("每小时整点执行");
+            }
+            // 每天固定时间执行（小时为数字）
+            else if ("0".equals(seconds) && "0".equals(minutes) && hours.matches("\\d+") && "*".equals(dayOfMonth) && "*".equals(month) && "?".equals(dayOfWeek)) {
+                description.append("每天 ").append(String.format("%02d:00", Integer.parseInt(hours))).append(" 执行");
+            }
+            // 每天固定时分执行
+            else if ("0".equals(seconds) && minutes.matches("\\d+") && hours.matches("\\d+") && "*".equals(dayOfMonth) && "*".equals(month) && "?".equals(dayOfWeek)) {
+                description.append("每天 ").append(String.format("%02d:%02d", Integer.parseInt(hours), Integer.parseInt(minutes))).append(" 执行");
+            }
+            // 工作日执行
+            else if ("0".equals(seconds) && minutes.matches("\\d+") && hours.matches("\\d+") && "?".equals(dayOfMonth) && "*".equals(month) && "MON-FRI".equals(dayOfWeek)) {
+                description.append("工作日 ").append(String.format("%02d:%02d", Integer.parseInt(hours), Integer.parseInt(minutes))).append(" 执行");
+            }
+            // 每N小时执行
+            else if ("0".equals(seconds) && "0".equals(minutes) && hours.matches("\\d+/\\d+") && "*".equals(dayOfMonth) && "*".equals(month) && "?".equals(dayOfWeek)) {
+                String[] hourParts = hours.split("/");
+                description.append("每").append(hourParts[1]).append("小时执行");
+            }
+            // 自定义调度
+            else {
+                description.append("自定义调度: ").append(cronExpression);
+            }
+        } catch (NumberFormatException e) {
             description.append("自定义调度: ").append(cronExpression);
         }
 
