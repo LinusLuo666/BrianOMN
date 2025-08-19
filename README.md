@@ -1,32 +1,54 @@
 # 🕐 Cron 表达式解析工具
 
-一个简单易用的 Cron 表达式解析工具，支持中文解释和未来执行时间预测。
+一个基于 Spring Boot + Vue.js 的 Cron 表达式解析和时间预测工具。
 
-## 功能特性
+## ✨ 功能特性
 
-- ✅ **Cron 表达式解析** - 支持 Quartz 规范的 Cron 表达式
-- ✅ **中文自然语言描述** - 将 Cron 表达式转换为易懂的中文描述
-- ✅ **执行时间预测** - 显示未来 5 次执行时间
-- ✅ **响应式界面** - 支持桌面和移动设备
-- ✅ **Docker 一键部署** - 支持容器化部署
+- ✅ **Cron 表达式解析** - 支持 Quartz 格式，生成中文描述
+- ✅ **执行时间预测** - 显示未来 N 次执行时间
+- ✅ **多时区支持** - 支持自定义时区设置
+- ✅ **响应式界面** - 现代化的 Web 界面
+- ✅ **Docker 部署** - 容器化部署，开箱即用
+- ✅ **单元测试** - 核心功能完整测试覆盖
 
-## 快速开始
+## 🚀 快速部署（推荐）
 
-### 使用 Docker Compose（推荐）
+### 方式一：一键部署脚本
 
 1. **克隆项目**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/LinusLuo666/BrianOMN.git
    cd BrianOMN
    ```
 
-2. **一键启动**
+2. **运行部署脚本**
    ```bash
-   docker-compose up -d
+   ./deploy.sh
    ```
 
+   脚本会自动：
+   - 检查并安装 Docker 和 Docker Compose
+   - 构建并启动所有服务
+   - 进行健康检查
+   - 显示访问地址
+
 3. **访问应用**
-   打开浏览器访问：http://localhost
+   - 前端：http://YOUR_SERVER_IP
+   - 后端：http://YOUR_SERVER_IP:8080
+
+### 方式二：手动 Docker 部署
+
+```bash
+# 克隆项目
+git clone https://github.com/LinusLuo666/BrianOMN.git
+cd BrianOMN
+
+# 启动服务
+docker-compose up -d --build
+
+# 查看状态
+docker-compose ps
+```
 
 ### 手动部署
 
@@ -104,29 +126,46 @@ GET /api/next-times?expr=0 0 4 * * ?&count=5
 }
 ```
 
-## Cron 表达式示例
+## 🧪 测试
+
+### 运行单元测试
+```bash
+cd backend
+./mvnw test
+```
+
+### 测试覆盖的功能
+- ✅ Cron 表达式解析（各种格式）
+- ✅ 执行时间计算
+- ✅ 异常处理
+- ✅ API 接口测试
+- ✅ 时区处理
+
+## 🔧 常用 Cron 示例
 
 | 表达式 | 描述 |
 |--------|------|
 | `0 0 4 * * ?` | 每天凌晨4点 |
-| `0 30 9 * * MON-FRI` | 工作日上午9:30 |
-| `0 0 */6 * * ?` | 每6小时 |
-| `0 0 0 1 * ?` | 每月1日凌晨 |
-| `0 15 10 ? * MON-FRI` | 工作日上午10:15 |
+| `0 30 9 ? * MON-FRI` | 工作日上午9:30 |
+| `0 0 0/6 * * ?` | 每6小时 |
+| `0 0 12 ? * SUN` | 每周日中午12点 |
+| `0 15 10 ? * *` | 每天上午10:15 |
 
 ## 项目结构
 
 ```
+BrianOMN/
 ├── backend/                 # Spring Boot 后端
-│   ├── src/main/java/       # Java 源码
-│   ├── pom.xml             # Maven 配置
-│   └── Dockerfile          # 后端镜像配置
-├── frontend/               # 前端
-│   ├── index.html          # 主页面
-│   ├── nginx.conf          # Nginx 配置
-│   └── Dockerfile          # 前端镜像配置
-├── docker-compose.yml      # 容器编排
-└── README.md              # 项目文档
+│   ├── src/main/java/      # 主要代码
+│   ├── src/test/java/      # 单元测试
+│   └── Dockerfile          # 后端镜像
+├── frontend/               # 前端页面
+│   ├── index.html         # 主页面
+│   ├── nginx.conf         # Nginx 配置
+│   └── Dockerfile         # 前端镜像
+├── docker-compose.yml     # 容器编排
+├── deploy.sh             # 一键部署脚本
+└── README.md             # 项目文档
 ```
 
 ## 技术栈
@@ -143,78 +182,70 @@ GET /api/next-times?expr=0 0 4 * * ?&count=5
 | `APP_DEFAULT_TIMEZONE` | `Asia/Shanghai` | 默认时区 |
 | `SPRING_PROFILES_ACTIVE` | - | Spring 配置文件 |
 
-## 故障排除
-
-### 常见问题
-
-1. **端口冲突**
-   ```bash
-   # 修改 docker-compose.yml 中的端口映射
-   ports:
-     - "8080:80"  # 将前端改为 8080 端口
-   ```
-
-2. **后端健康检查失败**
-   ```bash
-   # 检查后端日志
-   docker logs cron-tools-backend
-   ```
-
-3. **跨域问题**
-   - 确保前端和后端在同一域名下，或者修改后端 CORS 配置
-
-### 日志查看
+## 🐳 Docker 命令
 
 ```bash
-# 查看所有服务日志
+# 启动服务
+docker-compose up -d
+
+# 查看日志
 docker-compose logs -f
 
-# 查看特定服务日志
-docker-compose logs -f backend
-docker-compose logs -f frontend
+# 重启服务
+docker-compose restart
+
+# 停止服务
+docker-compose down
+
+# 更新代码并重新部署
+git pull && docker-compose up -d --build
 ```
 
-## 开发模式
+## ⚠️ 注意事项
 
-1. **后端开发**
-   ```bash
-   cd backend
-   ./mvnw spring-boot:run
-   ```
+1. **Quartz Cron 语法**：
+   - 不能同时指定 day-of-month 和 day-of-week
+   - 其中一个必须用 `?` 占位符
+   - 步长语法：`起始值/步长`（如 `0/6`）
 
-2. **前端开发**
-   ```bash
-   cd frontend
-   # 修改 index.html 中 API_BASE 为 'http://localhost:8080/api'
-   python -m http.server 3000
-   ```
+2. **常见错误**：
+   - ❌ `0 30 9 * * MON-FRI` 
+   - ✅ `0 30 9 ? * MON-FRI`
+   - ❌ `0 0 */6 * * ?`
+   - ✅ `0 0 0/6 * * ?`
 
-## 部署到生产环境
+## 🔍 故障排除
 
-### EC2 Ubuntu 部署
+### 查看容器状态
+```bash
+docker-compose ps
+```
 
-1. **安装 Docker**
-   ```bash
-   sudo apt update
-   sudo apt install -y docker.io docker-compose
-   sudo systemctl enable --now docker
-   ```
+### 查看后端日志
+```bash
+docker-compose logs backend
+```
 
-2. **部署应用**
-   ```bash
-   git clone <repository-url>
-   cd BrianOMN
-   sudo docker-compose up -d
-   ```
+### 查看前端日志
+```bash
+docker-compose logs frontend
+```
 
-3. **配置域名（可选）**
-   - 绑定域名到 EC2 公网 IP
-   - 使用 Let's Encrypt 配置 HTTPS
+### 重启单个服务
+```bash
+docker-compose restart backend
+```
 
-## 许可证
+### 完全清理重建
+```bash
+docker-compose down --rmi all --volumes
+docker-compose up -d --build
+```
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 许可证
 
 MIT License
-
----
-
-**快速测试**: 访问 http://localhost 并输入 `0 0 4 * * ?` 进行测试！
