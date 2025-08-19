@@ -1,5 +1,5 @@
 # Multi-stage build for smaller final image
-FROM maven:3.8.6-openjdk-17-slim AS builder
+FROM maven:3.9-eclipse-temurin-17-alpine AS builder
 
 WORKDIR /app
 
