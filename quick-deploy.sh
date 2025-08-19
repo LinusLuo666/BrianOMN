@@ -420,7 +420,7 @@ COPY src src
 RUN mvn clean package -DskipTests -B
 
 # Runtime stage
-FROM openjdk:17-jre-slim
+FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
