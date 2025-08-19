@@ -57,14 +57,18 @@ fi
 # 4. 检查用户是否在 docker 组中
 if ! groups $USER | grep -q '\bdocker\b'; then
     echo "⚠️  当前用户不在 docker 组中，需要重新登录或运行 'newgrp docker'"
-    echo "   你可以选择:"
-    echo "   1) 运行 'newgrp docker' 然后重新执行此脚本"
-    echo "   2) 注销并重新登录"
-    read -p "是否继续尝试部署? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
+    echo "   请运行以下命令之一："
+    echo "   1) newgrp docker && ./deploy.sh"
+    echo "   2) 重新登录系统后运行 ./deploy.sh"
+    exit 1
+fi
+
+# 检查 Docker 权限
+if ! docker ps &>/dev/null; then
+    echo "❌ Docker 权限不足，请运行："
+    echo "   newgrp docker && ./deploy.sh"
+    echo "   或者重新登录系统"
+    exit 1
 fi
 
 # 5. 停止已存在的容器
